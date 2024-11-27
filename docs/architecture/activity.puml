@@ -1,0 +1,50 @@
+@startuml Activity
+|Deployment|
+start
+
+:Read Configuration File;
+while (Another Machine available?) is (yes)
+    :Deploy LLM Wrapper;
+
+    :Wait for LLM Wrapper to be deployed;
+    :Send LLM deployment information LLM Wrapper;
+    :Start LLM on Wrapper;
+    :Store LLM Information in Registry DB;
+    |Deployment|
+endwhile (no)
+label idle_label
+|Running|
+repeat 
+fork  
+
+:Check LLM Wrapper Status;
+if (LLM Wrapper is ready?) then (no)
+    :Fix LLM Wrapper;
+endif
+:Update LLM Information in Registry DB;
+fork again
+
+:LLM Requested by Prompting Service;
+:Retrieve LLM Information from Registry DB;
+if (LLM is running?) then (no)
+    While (Machine available?) is (no)
+        :Check for unused LLM;
+        if (Unused LLM found?) then (yes)
+            :Send Stop Command to LLMWrapper;
+        endif
+    endwhile (yes)
+    :Deploy LLM in LLMWrapper;
+endif
+:Send LLM Information to Prompting Service;
+endfork
+repeat while (Registry is running?) is (yes) not (no)
+|Shutdown|
+while (One LLM Wrapper running?) is (yes)
+    :Send Stop Command to LLMWrapper;
+    :Wait for LLM Wrapper to stop;
+    :Shutdown LLM Wrapper;
+end while (no)
+:Stop Registry;
+:Stop Registry DB;
+stop
+@enduml

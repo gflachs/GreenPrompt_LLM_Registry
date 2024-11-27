@@ -1,0 +1,31 @@
+@startuml Sequenz
+
+participant "Promtping Service" as PromptingService
+control "LLM Registry" as Registry
+collections "Configuration" as LLMConfig
+database "LLM Registry DB" as RegistryDB
+boundary "LLM Machine" as LLMM
+participant "LLM Wrapper" as LLMW
+entity "LLM" as LLM
+
+Registry -> LLMConfig : getConfiguration
+Registry -> LLMM : Deploy LLM Wrapper
+LLMM -> LLMW : Deploy LLM Wrapper
+LLMW -> LLM : Start LLM
+LLM -> LLMW : LLM is running
+LLMW -> Registry : LLM is ready
+Registry -> RegistryDB : Store LLM Information
+PromptingService -> Registry : Request LLM
+Registry -> RegistryDB : Retrieve LLM Information
+Registry -> Registry: Check if LLM is running
+alt LLM is running
+    Registry -> PromptingService : Send LLM Information
+else LLM is not running
+    Registry -> LLMW : Deploy LLM
+    LLMW -> LLM : Start LLM
+    LLM -> LLMW : LLM is running
+    LLMW -> Registry : LLM is ready
+    Registry -> RegistryDB : Store LLM Information
+    Registry -> PromptingService : Send LLM Information
+end 
+@enduml
