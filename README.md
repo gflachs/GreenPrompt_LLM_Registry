@@ -13,9 +13,9 @@ It knows which machines are available, spawns LLMWrapper on them and manages the
 
 ## Architecture
 
-<!--![Components](./docs/architecture/components.puml)-->
-<!--![Sequenz](./docs/architecture/sequenz.puml)-->
-<!--![Activity](./docs/architecture/activity.puml)-->
+[![Components](https://tinyurl.com/2dml8ap9)](https://tinyurl.com/2dml8ap9)<!--![Components](./docs/architecture/components.puml)-->
+[![Sequenz](https://tinyurl.com/2dcbntvl)](https://tinyurl.com/2dcbntvl)<!--![Sequenz](./docs/architecture/sequenz.puml)-->
+[![Activity](https://tinyurl.com/2cxpee47)](https://tinyurl.com/2cxpee47)<!--![Activity](./docs/architecture/activity.puml)-->
 
 ## Setup
 
