@@ -1,0 +1,35 @@
+@startuml Component
+
+node "LLM Machine" as LMMM{
+    component "LLM Wrapper" as LLM
+    interface "Command" as LLMHttp
+    LLM -- LLMHttp : HTTP interface for receiving commands
+}
+interface "SSH" as LLMSSH
+LMMM -up- LLMSSH
+
+
+cloud "Prompting Service" as PromptingService
+
+
+component "LLM Registry" as Registry
+database "LLM Registry DB" as RegistryDB
+interface "LLM Provider" as LLMRequest
+interface "Configuration" as LLMConfig
+Registry -- LLMRequest : provides LLMs
+Registry -- LLMConfig
+
+actor "User" as User
+
+User -( LLMConfig : stores configuration
+
+
+PromptingService --( LLMRequest : Requests LLMs
+
+Registry --( LLMSSH : Deployment of LLMWrapper
+
+Registry --( LLMHttp : Managing of LLMWrapper and its LLM
+
+Registry -- RegistryDB : Stores LLM Information
+
+@enduml

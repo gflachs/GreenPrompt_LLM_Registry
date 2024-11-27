@@ -1,4 +1,4 @@
-# Template_MAS_LLM
+# LLM Registry Service
 
 ## Table of Content
 1. [Purpose](#purpose)
@@ -6,6 +6,16 @@
 3. [Contribution](#contribution)
 
 ## Purpose
+
+This Service provides LLMS via an API. It is part of the Greenprompt project. The service registry is a central component of the Greenprompt project. It is responsible for managing the lifecycle of the LLMWrappers and providing information about the currently deployed LLMS to the other components of the Greenprompt project.
+
+It knows which machines are available, spawns LLMWrapper on them and manages the LLMS, which are running inside the LLMWrappers. The service registry is also responsible for providing information about the currently deployed LLMS to the other components of the Greenprompt project.
+
+## Architecture
+
+[![Components](https://tinyurl.com/2dml8ap9)](https://tinyurl.com/2dml8ap9)<!--![Components](./docs/architecture/components.puml)-->
+[![Sequenz](https://tinyurl.com/2dcbntvl)](https://tinyurl.com/2dcbntvl)<!--![Sequenz](./docs/architecture/sequenz.puml)-->
+[![Activity](https://tinyurl.com/2cxpee47)](https://tinyurl.com/2cxpee47)<!--![Activity](./docs/architecture/activity.puml)-->
 
 ## Setup
 
