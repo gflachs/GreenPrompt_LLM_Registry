@@ -1,0 +1,22 @@
+@startuml Workflow
+participant PromptingService
+participant LLMRegistry
+participant LLMWrapper
+
+PromptingService -> LLMRegistry: Request LLM
+LLMRegistry -> PromptingService: Sends temporary link for collection LLMInformation
+LLMRegistry -> LLMRegistry: Check availability
+alt LLM not available
+    loop Wait for LLM to be ready
+        PromptingService -> LLMRegistry : checks with temporary link for LLM Information
+        LLMRegistry -> PromptingService: Status (e.g., Deploying, Waiting)
+    end
+end
+PromptingService -> LLMRegistry : checks with temporary link for LLM Information
+LLMRegistry -> LLMRegistry: reserves LLM for Promptingservice
+LLMRegistry -> PromptingService: Sends Information
+
+PromptingService -> LLMWrapper: Send Prompts
+PromptingService -> LLMRegistry: Release LLM
+LLMRegistry -> LLMRegistry: Mark LLM as available
+@enduml
