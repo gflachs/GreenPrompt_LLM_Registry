@@ -17,6 +17,9 @@ It knows which machines are available, spawns LLMWrapper on them and manages the
 [![Sequenz](https://tinyurl.com/2dcbntvl)](https://tinyurl.com/2dcbntvl)<!--![Sequenz](./docs/architecture/sequenz.puml)-->
 [![Activity](https://tinyurl.com/2cxpee47)](https://tinyurl.com/2cxpee47)<!--![Activity](./docs/architecture/activity.puml)-->
 
+### Communication with the Promtingservice
+<!--![Communication with the Promtingservice](./docs/architecture/promptingservice_workflow.puml)-->
+
 ## Setup
 
 ```sh
