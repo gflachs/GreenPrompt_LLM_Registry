@@ -10,6 +10,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+
 def write_llm_config(model, model_type, llm_config_json_path="llm_config.json"):
     '''
     Writes the given model and model_type to a JSON file, overwriting existing content.
@@ -91,17 +92,22 @@ def start_model_instance(model, model_type):
 
 
 def main():
+    # user input
     model = input("Please enter the model name: ")
     model_type = input("Please enter the model type: ")
+    logging.info(f"User provided model name and type: model_name={model}, model_type={model_type}")
 
+    # write json file
     write_llm_config(model, model_type)
-    logging.info("Model and model type were successfully written to the configuration")
+    logging.info(f"Model and model type were successfully written to config.json: model_name={model}, model_type={model_type}")
 
+    # read json file
     model, model_type = read_llm_config('llm_config.json')
 
+    # start instance
     if model and model_type:
         process = start_model_instance(model, model_type)
-        logging.info(f"Successfully read LLM config file.")
+        logging.info(f"Successfully read LLM config file: model_name={model}, model_type={model_type}")
     else:
         logging.error("Failed to read the model configuration.")
 
