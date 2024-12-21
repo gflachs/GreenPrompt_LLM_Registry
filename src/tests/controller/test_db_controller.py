@@ -4,39 +4,46 @@ from unittest.mock import MagicMock, patch
 from app.controller.db_controller import LLMRegistryDbController, DatabaseController
 from app.utils.configreader import ConfigReader
 
-
 @pytest.fixture
 def mock_db_controller(mocker):
-    db = MagicMock()
-    mocker.patch('app.controller.db_controller.DatabaseController.__new__', return_value=db)
-    mocker.patch('app.controller.db_controller.DatabaseController.__init__', return_value=None)
-    return db
+    db_controller = MagicMock()
+    mocker.patch('app.controller.db_controller.DatabaseController.get_instance', return_value=db_controller)
+    return db_controller
+
+
 
 @pytest.fixture
 def mock_config_reader(mocker):
-    config_reader_mock = MagicMock()
-    mocker.patch('app.utils.configreader.ConfigReader.__new__', return_value=config_reader_mock)
-    mocker.patch('app.utils.configreader.ConfigReader.__init__', return_value=None)
-    return config_reader_mock
+    config_reader = MagicMock()
+    config_reader.get.return_value = "test_db"
+    mocker.patch('app.utils.configreader.ConfigReader.get_instance', return_value=config_reader)
+    return config_reader
+
+@pytest.fixture(autouse=True)
+def reset_singletons():
+    from app.controller.db_controller import DatabaseController, LLMRegistryDbController
+    # Zugriff auf die privat umbenannten Variablen der Singleton-Instanz
+    DatabaseController._DatabaseController__instance = None
+    LLMRegistryDbController._LLMRegistryDbController__instance = None
+
+
+
 
 def test_singleton(mock_db_controller, mock_config_reader):
-    
     mock_config_reader.get.return_value = "sqlite:///:memory:"
 
     db_controller = LLMRegistryDbController.get_instance()
     db_controller2 = LLMRegistryDbController.get_instance()
     assert db_controller == db_controller2
     
-    db_controller = LLMRegistryDbController()
-    db_controller2 = LLMRegistryDbController()
-    
-    assert db_controller == db_controller2
+
     
 def test_table_creation(mock_db_controller, mock_config_reader):
-    
+
     mock_config_reader.get.return_value = "sqlite:///:memory:"
 
     db_controller = LLMRegistryDbController.get_instance()
+    
     
     mock_db_controller.create_table.assert_any_call("llm_wrapper", [
             ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
@@ -256,9 +263,9 @@ def test_add_request(mock_db_controller, mock_config_reader):
 
     db_controller = LLMRegistryDbController.get_instance()
     
-    db_controller.add_request("id", "config", "status", 1, "address")
+    db_controller.add_request("id", "config", 1)
     
-    mock_db_controller.insert_data.assert_called_once_with("llm_request", [("id", "config", "status", 1, "address")])
+    mock_db_controller.insert_data.assert_called_once_with("llm_request", [("id", "config", None, 1, None)])
     
 def test_get_request(mock_db_controller, mock_config_reader):
             

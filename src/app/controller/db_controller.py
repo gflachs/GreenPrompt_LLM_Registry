@@ -5,8 +5,25 @@ from app.utils.configreader import ConfigReader
 from app.utils.logger import console_logger
 
 class DatabaseController:
+    
+    __instance = None
+    __lock = threading.Lock()  # Lock für Thread-Sicherheit
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            with cls.__lock:
+                if cls.__instance is None:  # Doppelprüfung
+                    cls.__instance = super().__new__(cls)
+        return cls.__instance
+    
+    @classmethod
+    def get_instance(cls, db_name: str = None):
+        return cls(db_name)
+    
     def __init__(self, db_name: str):
         """Initialize the database controller with a SQLite database file."""
+        if hasattr(self, "_initialized") and self._initialized:
+            return
         self.connection = sqlite3.connect(db_name)
         self.cursor = self.connection.cursor()
 
@@ -115,6 +132,7 @@ class DatabaseController:
 class LLMRegistryDbController:
     __instance = None
     __lock = threading.Lock()  # Lock für Thread-Sicherheit
+    db_controller = None
 
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
@@ -130,10 +148,11 @@ class LLMRegistryDbController:
         
         console_logger.info("Initializing LLM Registry Database Controller...")
         # Deine bestehende Initialisierung hier
-        config_reader = ConfigReader()
+        config_reader = ConfigReader.get_instance()
         db_name = config_reader.get("database", "db_name")
         console_logger.info(f"Using database: {db_name}")
-        self.db_controller = DatabaseController(db_name)
+        self.db_controller = DatabaseController.get_instance(db_name)
+        console_logger.info(self.db_controller)
         self.db_controller.create_table("llm_wrapper", [
             ("id", "INTEGER PRIMARY KEY AUTOINCREMENT"),
             ("llm", "TEXT"),

@@ -3,6 +3,12 @@ from typing import List, Tuple, Any
 
 class ConfigReader:
     _instance = None
+    
+    @staticmethod
+    def get_instance():
+        if ConfigReader._instance is None:
+            ConfigReader._instance = ConfigReader()
+        return ConfigReader._instance
 
     def __new__(cls):
         if cls._instance is None:
