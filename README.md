@@ -1,9 +1,16 @@
 # LLM Registry Service
+[![Build and Test](https://github.com/gflachs/GreenPrompt_LLM_Registry/actions/workflows/build.yml/badge.svg)](https://github.com/gflachs/GreenPrompt_LLM_Registry/actions/workflows/build.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gflachs_GreenPrompt_LLM_Registry&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gflachs_GreenPrompt_LLM_Registry)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=gflachs_GreenPrompt_LLM_Registry&metric=bugs)](https://sonarcloud.io/summary/new_code?id=gflachs_GreenPrompt_LLM_Registry)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=gflachs_GreenPrompt_LLM_Registry&metric=coverage)](https://sonarcloud.io/summary/new_code?id=gflachs_GreenPrompt_LLM_Registry)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=gflachs_GreenPrompt_LLM_Registry&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=gflachs_GreenPrompt_LLM_Registry)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=gflachs_GreenPrompt_LLM_Registry&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=gflachs_GreenPrompt_LLM_Registry)
 
 ## Table of Content
 1. [Purpose](#purpose)
 2. [Setup](#setup)
-3. [Contribution](#contribution)
+3. [Start the Service](#start-the-service)
+4. [Contribution](#contribution)
 
 ## Purpose
 
@@ -25,6 +32,21 @@ It knows which machines are available, spawns LLMWrapper on them and manages the
 ```sh
 pip install -r requirements.txt
 ```
+
+## Start the Service 
+
+### Development
+```sh
+cd src/app
+fastapi dev main.py
+```
+
+### Production
+```sh
+cd src/app
+uvicorn main:app --host
+```
+
 
 ## Contribution
 

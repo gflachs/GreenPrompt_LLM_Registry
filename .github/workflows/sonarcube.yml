@@ -29,3 +29,19 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: -Dsonar.python.coverage.reportPaths=reports/coverage.xml
+      - name: Update Status in GitHub
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { context } = require('@actions/github');
+            const status = context.payload.workflow_run.conclusion === 'success' ? 'success' : 'failure';
+            await github.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.workflow_run.head_commit.id,
+              state: status,
+              context: 'SonarQube Quality Gate',
+              description: 'SonarQube Quality Gate Check',
+              target_url: context.run.html_url
+            });

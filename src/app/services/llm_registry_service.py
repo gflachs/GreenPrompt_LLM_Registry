@@ -5,6 +5,7 @@ import app.services.llm_wrapper_service as lms
 import threading
 import time
 import uuid
+from app.models.request import RequestPayload, RequestResponse, RequestStatus, RequestSingleResponse, LLMConfig, Args
 
 # Initialize the database controller
 
@@ -154,7 +155,7 @@ def deploy_llm(llm_config: Dict, address: str) -> str:
         console_logger.error(f"Error deploying LLM to address {address}: {e}")
         return False
 
-def request_llm(llm_config: List[Dict], measurementId : int) -> List[Dict]:
+def request_llm(llm_config: RequestPayload) -> RequestResponse:
     """Handles LLM deployment requests.
 
     Args:
@@ -164,18 +165,19 @@ def request_llm(llm_config: List[Dict], measurementId : int) -> List[Dict]:
     Returns:
         str: The unique ID for the request.
     """
-    console_logger.info(f"Received LLM deployment request for measurement ID: {measurementId}")
+    console_logger.info(f"Received LLM deployment request for measurement ID: {llm_config.measurementId}")
     llm_registry_db_controller = LLMRegistryDbController.get_instance()
 
-    llm_registry_db_controller.add_measurement(measurementId)
-    request_ids = []
-    for config in llm_config:
+    llm_registry_db_controller.add_measurement(llm_config.measurementId)
+    request_ids = RequestResponse(requests=[])
+    for config in llm_config.llms:
         # Generate a unique request ID
         request_id = str(uuid.uuid4())
         # Add the request to the database with status "queued"
-        llm_registry_db_controller.add_request(request_id, config, measurementId)
-        console_logger.info(f"Added request ID {request_id} to the deployment queue for measurement ID: {measurementId}")
-        request_ids.append({"id": request_id, "config": config})
+        llm_registry_db_controller.add_request(request_id, config.model_dump_json(), llm_config.measurementId)
+        console_logger.info(f"Added request ID {request_id} to the deployment queue for measurement ID: {llm_config.measurementId}")
+        request = RequestSingleResponse(requestId=request_id, llmconfig=config)
+        request_ids.requests.append(request)
         
     return request_ids
 
@@ -241,7 +243,18 @@ def get_request(request_id: str) -> Dict:
         Dict: The status of the request.
     """
     llm_registry_db_controller = LLMRegistryDbController.get_instance()
-    return llm_registry_db_controller.get_request(request_id)
+    request_status_dict = llm_registry_db_controller.get_request(request_id)
+    if request_status_dict is None:
+        return None
+    llm_config = request_status_dict["config"]
+    #ll_config is a json string, convert it to a dict
+    llm_config = LLMConfig.model_validate_json(llm_config)
+    status = request_status_dict["status"]
+    measurementId = request_status_dict["measurementId"]
+    address = request_status_dict["address"]
+    
+    return RequestStatus(requestId=request_id, llmconfig=llm_config, status=status, measurementId=measurementId, address=address)
+
 
 def shutdown():
     global running
