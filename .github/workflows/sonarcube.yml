@@ -1,0 +1,29 @@
+name: SonarQube Quality Gate
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
+
+jobs:
+  quality_gate:
+    name: SonarQube Cloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: reports/
+      - name: Verify Coverage Report Exists
+        run: ls -l reports/
+      - name: SonarQube Cloud Scan
+        uses: sonarsource/sonarqube-scan-action@v4.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.python.coverage.reportPaths=reports/coverage.xml
