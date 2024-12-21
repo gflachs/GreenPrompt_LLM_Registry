@@ -38,6 +38,11 @@ jobs:
           sed -i "s|$(pwd)/||g" reports/coverage.xml
       - name: Verify Coverage Report Exists
         run: ls -l reports/
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: reports/coverage.xml
 
   quality_gate:
     name: SonarQube Cloud
@@ -47,8 +52,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Copy Coverage Report
-        run: cp reports/coverage.xml reports/coverage-copied.xml
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-report
+          path: reports/
+      - name: Verify Coverage Report Exists in Quality Gate
+        run: ls -l reports/
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
