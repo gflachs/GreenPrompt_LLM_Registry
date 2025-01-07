@@ -1,6 +1,7 @@
 import configparser
 from typing import List, Tuple, Any
 import os
+import json
 import logging
 
 class ConfigReader:
@@ -37,7 +38,25 @@ class ConfigReader:
         Returns:
             str: The value of the specified option.
         """
-        return self.config.get(section, option)
+        value = self.config.get(section, option)
+        if section == "llm" and option == "llm_wrapper_machines":
+            self._validate_json(value)
+        return value
+    
+    def _validate_json(self, value: str):
+        """Validate that the provided value is a valid JSON string.
+
+        Args:
+            value (str): The value to validate.
+
+        Raises:
+            ValueError: If the value is not a valid JSON string.
+        """
+        try:
+            json.loads(value)
+        except json.JSONDecodeError as e:
+            logging.error(f"Invalid JSON value: {value}")
+            raise ValueError(f"Invalid JSON value: {value}") from e
     
     def set(self, section: str, option: str, value: str):
         """Set a value in the configuration file.
