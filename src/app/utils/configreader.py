@@ -32,3 +32,17 @@ class ConfigReader:
             str: The value of the specified option.
         """
         return self.config.get(section, option)
+    
+    def set(self, section: str, option: str, value: str):
+        """Set a value in the configuration file.
+
+        Args:
+            section (str): The section in the config file.
+            option (str): The option within the section.
+            value (str): The value to set.
+        """
+        if not self.config.has_section(section):
+            self.config.add_section(section)
+        self.config.set(section, option, value)
+        with open("config.ini", "w") as configfile:
+            self.config.write(configfile)
