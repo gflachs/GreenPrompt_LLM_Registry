@@ -1,5 +1,7 @@
 import configparser
 from typing import List, Tuple, Any
+import os
+import logging
 
 class ConfigReader:
     _instance = None
@@ -19,7 +21,11 @@ class ConfigReader:
     def _initialize(self):
         """Initialize the config reader with a default configuration file."""
         self.config = configparser.ConfigParser()
-        self.config.read("config.ini")
+        config_file = "config.ini"
+        if not os.path.exists(config_file):
+            logging.error(f"Configuration file '{config_file}' not found.")
+            raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
+        self.config.read(config_file)
 
     def get(self, section: str, option: str) -> str:
         """Retrieve a value from the configuration file.
