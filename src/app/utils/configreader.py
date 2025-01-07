@@ -53,7 +53,9 @@ class ConfigReader:
             ValueError: If the value is not a valid JSON string.
         """
         try:
-            json.loads(value)
+            parsed_value = json.loads(value)
+            if isinstance(parsed_value, list) and not parsed_value:
+                logging.info("The 'llm_wrapper_machines' list is empty.")
         except json.JSONDecodeError as e:
             logging.error(f"Invalid JSON value: {value}")
             raise ValueError(f"Invalid JSON value: {value}") from e
