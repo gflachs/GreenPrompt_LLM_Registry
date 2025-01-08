@@ -3,6 +3,7 @@ import time
 from unittest.mock import MagicMock, patch
 from app.controller.db_controller import LLMRegistryDbController
 import app.services.llm_wrapper_service as lms
+from app.models.request import RequestPayload, RequestResponse, RequestStatus, Args, LLMConfig, RequestSingleResponse
 from app.services.llm_registry_service import (
     start,
     shutdown,
@@ -60,26 +61,54 @@ def test_deploy_llm_when_deployment_failure(mock_environment):
     
 def test_request_llm(mock_environment):
     db = mock_environment["db"]
+
+    args1 = Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})
+    args2 = Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})
+    
+    llm_config1 = LLMConfig(huggingface_url="https://example.com/model", model="example-model", args=args1)
+    llm_config2 = LLMConfig(huggingface_url="https://example.com/model2", model="example-model2", args=args2)
+    
+    request_payload = RequestPayload(llms=[llm_config1, llm_config2], measurementId=1234)
+    
+    single_request_response1 = RequestSingleResponse(llmconfig=llm_config1, requestId="mocked-uuid-1")
+    single_request_response2 = RequestSingleResponse(llmconfig=llm_config2, requestId="mocked-uuid-2")
     
     # Mock UUIDs
     with patch("uuid.uuid4", side_effect=["mocked-uuid-1", "mocked-uuid-2"]):
         request_ids = request_llm(
-            [{"model": "model1", "model_type": "model_type1"}, {"model": "model2", "model_type": "model_type2"}], 
-            1234
+            request_payload
         )
     
+    request_json_llms_0 = request_payload.llms[0].model_dump_json()
+    print(request_json_llms_0)
+    request_json_llms_1 = request_payload.llms[1].model_dump_json()
     # Assertions for add_request calls
     expected_calls = [
-        ("mocked-uuid-1", {"model": "model1", "model_type": "model_type1"},  1234),
-        ("mocked-uuid-2", {"model": "model2", "model_type": "model_type2"}, 1234),
+        (
+            "mocked-uuid-1",
+            request_json_llms_0,
+            1234
+        ),
+        (
+            "mocked-uuid-2",
+            request_json_llms_1,
+            1234
+        )
     ]
-    db.add_request.assert_has_calls([((call_id, config, measurement),) for call_id, config, measurement in expected_calls], any_order=False)
+    actual_calls = [
+        (
+            args[0],  # request_id
+            args[1],  # JSON-String aus model_dump_json
+            args[2]   # measurementId
+        )
+        for args, _ in db.add_request.call_args_list
+    ]
+
+        
+    assert actual_calls == expected_calls
 
     # Assertions for return values
-    assert request_ids == [
-        {"id": "mocked-uuid-1", "config": {"model": "model1", "model_type": "model_type1"}},
-        {"id": "mocked-uuid-2", "config": {"model": "model2", "model_type": "model_type2"}}
-    ]
+    assert request_ids.requests == [single_request_response1, single_request_response2]
 
 def test_process_queue(mocker, mock_environment):
     # Mock für is_running mit einer Liste von Werten
@@ -309,11 +338,15 @@ def test_process_queue_no_measurement_waiting(mocker, mock_environment):
 def test_get_request(mock_environment):
     db = mock_environment["db"]
     
-    db.get_request.return_value = {"id": "request-1", "config": {"model": "model1", "model_type": "model_type1"}, "status": "queued", "measurementId": 1234, "address": "localhost:5000"}
+    llm_config = LLMConfig(huggingface_url="https://example.com/model", model="example-model", args=Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8}))
+    
+    
+    db.get_request.return_value = {"id": "request-1", "config": llm_config.model_dump_json(), "status": "queued", "measurementId": 1234, "address": "localhost:5000"}
     
     request = get_request("request-1")
     
-    assert request == {"id": "request-1", "config": {"model": "model1", "model_type": "model_type1"}, "status": "queued", "measurementId": 1234, "address": "localhost:5000"}
+    assert request == RequestStatus(requestId="request-1", llmconfig=llm_config, status="queued", measurementId=1234, address="localhost:5000")
+    
     db.get_request.assert_called_once_with("request-1")
 
 def test_stop_llm(mock_environment):
