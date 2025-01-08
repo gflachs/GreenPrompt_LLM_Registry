@@ -31,5 +31,5 @@ class Logger:
         logging.debug(message)
         
 
-file_logger = Logger("llm_registry.log")
+file_logger = Logger("./logs/llm_registry.log")
 console_logger = Logger()
