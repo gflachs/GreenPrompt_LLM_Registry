@@ -50,6 +50,8 @@ def test_table_creation(mock_db_controller, mock_config_reader):
             ("llm", "TEXT"),
             ("llm_config", "TEXT"),
             ("address", "TEXT"),
+            ("username", "TEXT"),
+            ("password", "TEXT"),
             ("status", "TEXT")
         ])
     
@@ -73,9 +75,9 @@ def test_insert_wrapper(mock_db_controller, mock_config_reader):
     
         db_controller = LLMRegistryDbController.get_instance()
         
-        db_controller.add_llm_wrapper("llm", "config", "address", "status")
+        db_controller.add_llm_wrapper("llm", "config", "address", "root", "password", "status")
         
-        mock_db_controller.insert_data.assert_called_once_with("llm_wrapper", [("llm", "config", "address", "status")])
+        mock_db_controller.insert_data.assert_called_once_with("llm_wrapper", [("llm", "config", "address", "root", "password", "status")])
         
 def test_get_llm_wrappers(mock_db_controller, mock_config_reader):
         

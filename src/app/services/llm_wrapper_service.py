@@ -27,3 +27,13 @@ def stop_llm(lm_address: str):
     else:
         console_logger.error(f"Failed to stop LLM: {response}")
         return False
+    
+def shutdown_wrapper(wrapper_address: str, username: str, password: str):
+    response = wrapper_client.stop_wrapper(wrapper_address, password, username)
+    if response:
+        console_logger.info(f"Wrapper shutdown successfully: {response}")
+        return True
+    else:
+        console_logger.error(f"Failed to shutdown Wrapper: {response}")
+        return False
+   

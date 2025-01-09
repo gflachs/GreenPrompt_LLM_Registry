@@ -26,10 +26,38 @@ def check_status():
             wrappers = db_controller.get_all_wrappers()
 
             for wrapper in wrappers:
+                if wrapper["status"] == "failure":
+                    #we need to restart the wrapper
+                    console_logger.info(f"Restarting wrapper {wrapper['address']}")
+                    db_controller.change_llm_wrapper_status_by_id(wrapper["id"], "restarting")
+                    restart_wrapper_in_background(wrapper["id"], wrapper["address"], wrapper["password"], wrapper["username"])
+                    continue
+                if wrapper["status"] == "prompting" or wrapper["status"] == "stopping" or wrapper["status"] == "restarting" or wrapper["status"] == "deploying" or wrapper["status"] == "unresponsive":
+                    continue
                 response = wrapper_client.check_status(wrapper["address"])
                 db_controller.change_llm_wrapper_status_by_id(wrapper["id"], response)
                 
         time.sleep(60)
+        
+def restart_wrapper_in_background(wrapper_id: int, address: str, password: str, username: str):
+    """
+    Führt den eigentlichen Neustart in einem eigenen Thread durch.
+    """
+    def _restart_logic():
+        db_controller = LLMRegistryDbController.get_instance()
+        console_logger.info(f"Neustart im Hintergrund für Wrapper {address}")
+
+        response = wrapper_client.restart_llm_wrapper(address, password, username)
+
+        if response:
+            db_controller.change_llm_wrapper_status_by_id(wrapper_id, "idle")
+        else:
+            db_controller.change_llm_wrapper_status_by_id(wrapper_id, "unresponsive")
+
+    # Starte das obige _restart_logic in einem neuen Thread
+    t = threading.Thread(target=_restart_logic, daemon=True)
+    t.start()
+    
   
   
 thread = threading.Thread(target=check_status, daemon=True)
