@@ -6,7 +6,6 @@ class Logger:
         if filename is None:
             # Log to console
             logging.basicConfig(
-                stream=sys.stdout,
                 level=logging.DEBUG,
                 format="%(asctime)s - %(levelname)s - %(message)s"
             )
