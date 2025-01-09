@@ -158,6 +158,8 @@ class LLMRegistryDbController:
             ("llm", "TEXT"),
             ("llm_config", "TEXT"),
             ("address", "TEXT"),
+            ("username", "TEXT"),
+            ("password", "TEXT"),
             ("status", "TEXT")
         ])
         self.db_controller.create_table("llm_request", [
@@ -187,8 +189,8 @@ class LLMRegistryDbController:
     def get_all_wrappers(self):
         return self.db_controller.fetch_all("llm_wrapper")
         
-    def add_llm_wrapper(self, name: str, config: str, address: str, status: str):
-        self.db_controller.insert_data("llm_wrapper", [(name, config, address, status)])
+    def add_llm_wrapper(self, name: str, config: str, address: str, username: str, password: str, status: str):
+        self.db_controller.insert_data("llm_wrapper", [(name, config, address, username, password, status)])
         
     def get_llm_wrappers(self):
         console_logger.info("Fetching all LLM wrappers...")

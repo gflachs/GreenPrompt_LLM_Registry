@@ -3,6 +3,14 @@ import time
 from unittest.mock import MagicMock, patch
 from app.utils.configreader import ConfigReader
 
+@pytest.fixture(autouse=True)
+def reset_singleton():
+    # Vor jedem Test das Singleton zurücksetzen
+    ConfigReader._instance = None
+    yield
+    # Nach dem Test kannst du es optional auch wieder auf None setzen
+    ConfigReader._instance = None
+
 def test_get(mocker):
     
     mock_configparser = mocker.patch("app.utils.configreader.configparser")
