@@ -41,7 +41,7 @@ class ConfigReader:
         """
         value = self.config.get(section, option)
         if section == "llm" and option == "llm_wrapper_machines":
-            self._validate_json(value)
+            self.validate_llm_wrapper_config(value)
         return value
     
     def validate_llm_wrapper_config(self, value: str):
