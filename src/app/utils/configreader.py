@@ -43,7 +43,7 @@ class ConfigReader:
             self._validate_json(value)
         return value
     
-    def _validate_json(self, value: str):
+    def validate_llm_wrapper_config(self, value: str):
         """Validate that the provided value is a valid JSON string.
 
         Args:
