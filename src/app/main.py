@@ -11,7 +11,12 @@ configreader = ConfigReader.get_instance()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     console_logger.info("Starting up the application")
-    #@TODO: read the config for the llm_wrapper_machines and write them to the db
+    
+    #read the config for the llm_wrapper_machines
+    db_name = configreader.get("database", "db_name")
+    llm_wrapper_machines = configreader.get("llm", "llm_wrapper_machines")
+
+    #@TODO: write them to the db
     
     #start the check status thread
     llm_wrapper_status_service.start_check_status()
