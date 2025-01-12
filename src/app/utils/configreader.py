@@ -56,9 +56,11 @@ class ConfigReader:
             parsed_value = json.loads(value)
             if isinstance(parsed_value, list) and not parsed_value:
                 logging.info("The 'llm_wrapper_machines' list is empty.")
+                return "The 'llm_wrapper_machines' list is empty."
         except json.JSONDecodeError as e:
             logging.error(f"Invalid JSON value: {value}")
             raise ValueError(f"Invalid JSON value: {value}") from e
+        return parsed_value
     
     def set(self, section: str, option: str, value: str):
         """Set a value in the configuration file.
