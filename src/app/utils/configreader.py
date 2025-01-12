@@ -22,7 +22,8 @@ class ConfigReader:
     def _initialize(self):
         """Initialize the config reader with a default configuration file."""
         self.config = configparser.ConfigParser()
-        config_file = "config.local-dev.ini"
+        env = 'local-dev' #os.getenv('ENV', 'local-dev')
+        config_file = f'config.{env}.ini'
         if not os.path.exists(config_file):
             logging.error(f"Configuration file '{config_file}' not found.")
             raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
