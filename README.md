@@ -19,12 +19,24 @@ This Service provides LLMS via an API. It is part of the Greenprompt project. Th
 It knows which machines are available, spawns LLMWrapper on them and manages the LLMS, which are running inside the LLMWrappers. The service registry is also responsible for providing information about the currently deployed LLMS to the other components of the Greenprompt project.
 
 ## Architecture
+### Components
+This component diagram illustrates the key role of the LLM Registry in the GreenPrompt architecture. The Registry acts as a central hub, interacting with various components such as the LLM Machine, Prompting Service, and LLMConfig. It manages the deployment and lifecycle of LLM Wrappers, provides LLMs to the Prompting Service, and stores LLM information in the LLM Registry DB.
 
 [![Components](https://tinyurl.com/2dml8ap9)](https://tinyurl.com/2dml8ap9)<!--![Components](./docs/architecture/components.puml)-->
+
+### Sequenz
+This sequence diagram illustrates the key role of the LLM Registry in managing LLM deployments and fulfilling LLM requests. The Registry interacts with various components, including the LLMConfig, LLM Machine, LLM Wrapper, and LLM, to ensure the availability of LLMs for the Prompting Service.
+
 [![Sequenz](https://tinyurl.com/2dcbntvl)](https://tinyurl.com/2dcbntvl)<!--![Sequenz](./docs/architecture/sequenz.puml)-->
+
+### Activity
+This activity diagram illustrates the key role of the LLM Registry in managing the lifecycle of LLMs. The Registry orchestrates the deployment of LLM Wrappers, monitors their status, and ensures the availability of LLMs to fulfill requests from the Prompting Service. The Registry also plays a crucial role in coordinating the shutdown process.
+
 [![Activity](https://tinyurl.com/2cxpee47)](https://tinyurl.com/2cxpee47)<!--![Activity](./docs/architecture/activity.puml)-->
 
 ### Communication with the Promtingservice
+This workflow diagram illustrates the process of requesting and using an LLM through the LLM Registry. The Prompting Service initiates a request for an LLM, and the Registry handles the allocation of available LLMs. The Registry provides a temporary link for the Prompting Service to monitor the LLM's status. Once the LLM is ready, the Registry sends the necessary information to the Prompting Service for interaction. After the Prompting Service is finished, it releases the LLM back to the Registry.
+
 [![Communication with the Promtingservice](https://tinyurl.com/29qrd7rv)](https://tinyurl.com/29qrd7rv)<!--![Communication with the Promtingservice](./docs/architecture/promptingservice_workflow.puml)-->
 
 ## Setup
