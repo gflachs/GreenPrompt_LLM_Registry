@@ -9,8 +9,9 @@
 ## Table of Content
 1. [Purpose](#purpose)
 2. [Setup](#setup)
-3. [Start the Service](#start-the-service)
-4. [Contribution](#contribution)
+3. [Codebase Structure](#codebase-structure)
+4. [Start the Service](#start-the-service)
+5. [Contribution](#contribution)
 
 ## Purpose
 
@@ -53,6 +54,55 @@ Install all dependencies from the `requirements.txt` file using pip:
 ```sh
 pip install -r requirements.txt
 ```
+
+## Codebase Structure
+- **[.github/workflows](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/.github/workflows):**
+  - **[build.yml](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/.github/workflows/build.yml):** Defines the build and test process.
+  - **[plantuml.yml](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/.github/workflows/plantuml.yml):** Processes PlantUML diagrams in Markdown files.
+  - **[sonarcube.yml](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/.github/workflows/sonarcube.yml):** Integrates SonarQube for code quality analysis.
+- **[docs/architectur](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/docs/architecture):** Stores puml files, that allows you to generate UML diagrams from plain text descriptions.
+- **[src](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/src):** Contains the source code files. </summary>
+   - **[app](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/src/app):** Contains the main application logic and modules.
+      - **[clients](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/src/app/clients):** Contains modules that manage interactions with external services or clients.
+         - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/clients/__init__.py):** This file initializes the clients module.
+         - **[wrapper_client.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/clients/wrapper_client.py):** This module handles sending requests to the LLM Wrapper for deploying, stopping, and checking the status of LLM instances.
+      - **[controller](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/controller):** Contains modules that manage application logic and interactions with the database or other services.
+         - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/controller/__init__.py):** This file initializes the controller module.
+         - **[db_controller.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/controller/db_controller.py):** This module manages interactions with the SQLite database, including creating tables, inserting data, and running queries.
+         - **[promptingservice_controller.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/controller/promptingservice_controller.py):** This module defines API endpoints for managing LLM deployment requests using FastAPI.
+      - **[models](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/models):** This directory contains data models used in the application.
+         - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/models/__init__.py):** This file initializes the models module.
+         - **[request.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/models/request.py):** This file defines data models for handling LLM deployment requests using Pydantic.
+      - **[services](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/services):** This directory contains business logic and service classes for the application.
+         - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/services/__init__.py):** This file initializes the services module.
+         - **[llm_registry_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/services/llm_registry_service.py):** This module manages the deployment, stopping, and status tracking of LLM instances.
+         - **[llm_wrapper_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/services/llm_wrapper_service.py):** This module handles the interaction with the LLM Wrapper, including deploying and stopping LLM instances.
+         - **[llm_wrapper_status_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/services/llm_wrapper_status_service.py):** This module checks and updates the status of LLM Wrappers.
+      - **[utils](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/utils/):** This directory contains utility functions and classes used across the application.
+         - **[configreader.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/utils/configreader.py):** This file defines a singleton class for reading configuration settings from a file.
+         - **[logger.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/src/app/utils/logger.py):** This file provides logging functionality for both console and file logging.
+      - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/src/app/__init__.py):** This file initializes the app module.
+      - **[main.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/src/app/main.py):** This is the main entry point for the application, setting up the FastAPI app and managing its lifecycle.
+   - **[tests](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/):** Contains unit tests for various functionalities of the project.
+      - **[clients](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/clients/):**
+         - **[test_wrapper_client.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/clients/test_wrapper_client.py):** Tests the deploy_llm and stop_llm functions by mocking HTTP requests and validating responses based on different status codes.
+      - **[controller](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/controller/):**
+         - **[test_db_controller.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/controller/test_db_controller.py):** Tests the LLMRegistryDbController singleton behavior, table creation, data insertion, and retrieval methods including handling of specific LLM wrapper and request statuses.
+         - **[test_promptingservice_controller.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/controller/test_promptingservice_controller.py):** Tests API endpoints of the promptingservice_controller by mocking service responses and validating request payloads and response statuses.
+      - **[services](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/services/):**
+         - **[test_llm_wrapper_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/services/test_llm_wrapper_service.py):** Tests the interaction with llm_wrapper_service by mocking the wrapper_client and ensuring correct deployment and stopping of LLM instances based on returned statuses.
+         - **[test_llm_wrapper_status_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/services/test_llm_wrapper_status_service.py):** Tests the check_status function by mocking the database controller and wrapper client, and validating the handling of different LLM wrapper statuses like ready, deploying, stopping, restarting, and failure.
+         - **[test_llm_registry_service.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/services/test_llm_registry_service.py):** Tests the llm_registry_service by mocking its methods and validating the deployment, stopping, and status tracking of LLM instances.
+      - **[utils](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/utils/):**
+         - **[test_configreader.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/utils/test_configreader.py):** Tests the ConfigReader singleton behavior and its ability to read configuration values using mocked configparser.
+      - **[__init__.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/__init__.py):** Initializes the tests module.
+      - **[test_main.py](https://github.com/gflachs/GreenPrompt_LLM_Registry/tree/main/tests/test_main.py):** Tests the FastAPI application's startup and shutdown processes, including lifecycle hooks and endpoint responses.
+- **[.gitignore](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/.gitignore):** Specifies files and directories that should be ignored by Git in order to avoid committing them to the repository.
+- **[LICENSE](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/LICENSE):** Contains the MIT License text, granting permission to use, copy, modify, and distribute the software.
+- **[llm_config.json](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/llm_config.json):**
+- **[pytest.ini](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/pytest.ini):** Configuration file for pytest, specifying the paths to test modules and other settings.
+- **[requirements.txt](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/requirements.txt):** Lists the dependencies required for the project, which can be installed using pip.
+- **[sonar-project.properties](https://github.com/gflachs/GreenPrompt_LLM_Registry/blob/main/sonar-project.properties):** Configuration file for SonarQube, specifying project details and paths for source files, tests, and coverage reports. 
 
 ## Start the Service 
 
