@@ -41,6 +41,15 @@ This workflow diagram illustrates the process of requesting and using an LLM thr
 
 ## Setup
 
+Dependencies:
+- **requests:** Used for making HTTP requests to communicate with external services.
+- **pytest:** Utilized for writing and running tests.
+- **pytest-mock:** A plugin for pytest to use mock objects.
+- **fastapi[standard]:** A web framework for building APIs with Python 3.7+ based on standard Python type hints.
+- **httpx:** Provides a fully featured HTTP client for Python.
+- **paramiko:** A Python implementation of the SSHv2 protocol, providing both client and server functionality.
+
+Install all dependencies from the `requirements.txt` file using pip:
 ```sh
 pip install -r requirements.txt
 ```
