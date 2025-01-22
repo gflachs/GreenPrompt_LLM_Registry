@@ -4,3 +4,4 @@ pytest-mock
 fastapi[standard]
 httpx
 paramiko
+ansible-runner

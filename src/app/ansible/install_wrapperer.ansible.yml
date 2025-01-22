@@ -1,0 +1,73 @@
+---
+- name: Deploy LLM Wrapper Service
+  hosts: llm_wrapper_hosts
+  become: true  # Ermöglicht Aufgaben mit Root-Rechten
+  vars:
+    repo_url: "https://github.com/gflachs/GreenPrompt_LLM_Registry.git"
+    branch: "main"
+    service_name: "llm-wrapper"
+    app_directory: "/opt/llm-wrapper"
+    service_port: 8080
+    python_exec: "/usr/bin/python3"
+    main_script: "main.py"
+
+  tasks:
+    - name: Ensure necessary packages are installed
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - git
+          - ufw
+        state: present
+        update_cache: yes
+
+    - name: Ensure the application directory exists
+      file:
+        path: "{{ app_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Clone the Python application from GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_directory }}"
+        version: "{{ branch }}"
+        force: true
+
+    - name: Open port {{ service_port }} using UFW
+      ufw:
+        rule: allow
+        port: "{{ service_port }}"
+        proto: tcp
+
+    - name: Create systemd service file
+      copy:
+        dest: "/etc/systemd/system/{{ service_name }}.service"
+        content: |
+          [Unit]
+          Description=LLM Wrapper Service
+          After=network.target
+
+          [Service]
+          ExecStart={{ python_exec }} {{ app_directory }}/{{ main_script }}
+          WorkingDirectory={{ app_directory }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+
+    - name: Enable and start LLM Wrapper service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
