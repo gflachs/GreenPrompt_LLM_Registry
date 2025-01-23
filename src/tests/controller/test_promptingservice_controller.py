@@ -12,8 +12,9 @@ def sample_request_payload():
     return {
         "llms": [
             {
-                "huggingface_url": "https://example.com/model",
+                "modeltyp": "https://example.com/model",
                 "model": "example-model",
+                "uses_chat_template": True,
                 "args": {
                     "prompting": {"temperature": 0.7, "user": "test_user"},
                     "deployment": {"gpu_enabled": True, "batch_size": 8}
@@ -29,6 +30,7 @@ def sample_request_invalid_payload_missing_url():
         "llms": [
             {
                 "model": "example-model",
+                "uses_chat_template": True,
                 "args": {
                     "prompting": {"temperature": 0.7, "user": "test_user"},
                     "deployment": {"gpu_enabled": True, "batch_size": 8}
@@ -43,7 +45,8 @@ def sample_request_invalid_payload_missing_model():
     return {
         "llms": [
             {
-                "huggingface_url": "https://example.com/model",
+                "modeltyp": "https://example.com/model",
+                "uses_chat_template": True,
                 "args": {
                     "prompting": {"temperature": 0.7, "user": "test_user"},
                     "deployment": {"gpu_enabled": True, "batch_size": 8}
@@ -58,8 +61,9 @@ def sample_request_invalid_payload_missing_deplyoment_args():
     return {
         "llms": [
             {
-                "huggingface_url": "https://example.com/model",
+                "modeltyp": "https://example.com/model",
                 "model": "example-model",
+                "uses_chat_template": True,
                 "args": {
                     "prompting": {"temperature": 0.7, "user": "test_user"}
                 }
@@ -73,8 +77,9 @@ def sample_request_invalid_payload_missing_prompting_args():
     return {
         "llms": [
             {
-                "huggingface_url": "https://example.com/model",
+                "modeltyp": "https://example.com/model",
                 "model": "example-model",
+                "uses_chat_template": True,
                 "args": {
                     "deployment": {"gpu_enabled": True, "batch_size": 8}
                 }
@@ -88,8 +93,9 @@ def sample_request_invalid_payload_missing_measurementId():
     return {
         "llms": [
             {
-                "huggingface_url": "https://example.com/model",
+                "modeltyp": "https://example.com/model",
                 "model": "example-model",
+                "uses_chat_template": True,
                 "args": {
                     "prompting": {"temperature": 0.7, "user": "test_user"},
                     "deployment": {"gpu_enabled": True, "batch_size": 8}
@@ -156,7 +162,7 @@ def test_get_request_with_mock(mock_get_request):
     # Mock die Rückgabe von lms.get_request
     request = RequestStatus(
         requestId="1",
-        llmconfig=LLMConfig(huggingface_url="http://example.com/model", model="example-model", args=Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})),
+        llmconfig=LLMConfig(modeltyp="http://example.com/model", model="example-model", uses_chat_template=True, args=Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})),
         status="completed",
         measurementId=1234,
         address="http://example.com/request/1"
