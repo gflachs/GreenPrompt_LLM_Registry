@@ -6,8 +6,9 @@ class Args(BaseModel):
     deployment: Dict[str, Any]  
 
 class LLMConfig(BaseModel):
-    huggingface_url: str = Field(..., pattern="^https?://", description="Must be a valid URL")
+    modeltyp: str = Field(..., description="Model type must be provided")
     model: str = Field(..., min_length=1, description="Model name cannot be empty")
+    uses_chat_template: bool = Field(..., description="Uses chat template must be provided")
     args: Args  
 
 class RequestPayload(BaseModel):
@@ -26,4 +27,4 @@ class RequestStatus(BaseModel):
     llmconfig : LLMConfig
     status: str = Field(..., description="Status must be provided")
     measurementId: int = Field(..., gt=0, description="Measurement ID must be positive")
-    address : str = Field(None, description="Address can be empty")
+    address : str | None = Field(None, description="Address must be provided")

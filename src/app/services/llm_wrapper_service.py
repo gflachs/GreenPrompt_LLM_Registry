@@ -12,7 +12,7 @@ Therefore it provides the following functions:
 
 def deploy_llm(llm_address: str,llm_config_json: Dict):
     response = wrapper_client.deploy_llm(llm_address, llm_config_json)
-    if response == "ready":
+    if response == "success":
         console_logger.info(f"LLM deployed successfully: {response}")
         return True
     else:
@@ -21,7 +21,7 @@ def deploy_llm(llm_address: str,llm_config_json: Dict):
 
 def stop_llm(lm_address: str):
     response = wrapper_client.stop_llm(lm_address)
-    if response == "stopped":
+    if response == "success":
         console_logger.info(f"LLM stopped successfully: {response}")
         return True
     else:

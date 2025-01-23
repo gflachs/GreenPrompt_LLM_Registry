@@ -34,14 +34,10 @@ def process_queue():
                     console_logger.info(best_deployments)
                     console_logger.info(f"Found {len(best_deployments)} best deployments")
                     for deployment in best_deployments:
-                        success = deploy_llm(deployment["llm_config"], deployment["address"])
-                        if success:
-                            llm_registry_db_controller.set_request_address(deployment["request_id"], deployment["address"])
-                            llm_registry_db_controller.change_llm_wrapper_status_by_id(deployment["wrapper_id"], "prompting")
-                            llm_registry_db_controller.update_measurement_wrapper_id(deployment["measurementId"], deployment["wrapper_id"])
-                        else:
-                            llm_registry_db_controller.change_llm_wrapper_status_by_id(deployment["wrapper_id"], "failure")
-                            llm_registry_db_controller.update_request_status("queued", deployment["request_id"])
+                        llm_registry_db_controller.set_request_address(deployment["llm_request_id"], deployment["address"])
+                        llm_registry_db_controller.change_llm_wrapper_status_by_id(deployment["wrapper_id"], "prompting")
+                        llm_registry_db_controller.update_measurement_wrapper_id(deployment["measurementId"], deployment["wrapper_id"])
+                       
                 except Exception as e:
                     console_logger.error(f"Error processing best deployments: {e}")
                 
@@ -63,12 +59,12 @@ def process_queue():
                         queued_request = llm_registry_db_controller.get_next_undeployed_request(measurement["id"])
                         console_logger.info(f"Found queued request: {queued_request}")
                         
-                        if not queued_request:
-                            llm_registry_db_controller.update_measurement_status("finished", measurement["wrapper_id"])
+                        if not queued_request or queued_request is None:
+                            llm_registry_db_controller.update_measurement_status(measurement["id"],"finished")
                             continue
                         
                         
-                        llm_config = queued_request["config"]
+                        llm_config = queued_request["llm_config"]
                         request_id = queued_request["id"]
 
                         #if address is None, find the next idle wrapper
@@ -97,7 +93,7 @@ def process_queue():
                             console_logger.info(f"Found wrapper {wrapper['id']} with status {wrapper['status']}")
                             if wrapper["status"] == "ready":
                                 try:
-                                    success = stop_llm(wrapper["id"])
+                                    success = stop_llm(wrapper["id"], wrapper["address"])
                                     if success:
                                         llm_registry_db_controller.change_llm_wrapper_status_by_id(wrapper["id"], "idle")
                                     else:
@@ -149,7 +145,7 @@ def deploy_llm(llm_config: Dict, address: str) -> str:
     llm_registry_db_controller.change_llm_wrapper_status_by_address(address, "deploying")
     # Deploy the LLM to the wrapper
     try:
-        return lms.deploy_llm(llm_config, address)
+        return lms.deploy_llm(address, llm_config)
     except Exception as e:
         llm_registry_db_controller.change_llm_wrapper_status_by_address(address, "failure")
         console_logger.error(f"Error deploying LLM to address {address}: {e}")
@@ -181,7 +177,7 @@ def request_llm(llm_config: RequestPayload) -> RequestResponse:
         
     return request_ids
 
-def stop_llm(id: str) -> bool:
+def stop_llm(id: str, address: str) -> bool:
     """Stops an LLM on a wrapper.
 
     Args:
@@ -195,10 +191,10 @@ def stop_llm(id: str) -> bool:
     llm_registry_db_controller.change_llm_wrapper_status_by_id(id, "stopping")
     # Stop the LLM on the wrapper
     try:
-        return lms.stop_llm(id)
+        return lms.stop_llm(address)
     except Exception as e:
         llm_registry_db_controller.change_llm_wrapper_status_by_id(id, "failure")
-        console_logger.error(f"Error stopping LLM on address {id}: {e}")
+        console_logger.error(f"Error stopping LLM on address {address}: {e}")
         return False
 
 def release_llm(request_id: str) -> bool:
@@ -224,7 +220,13 @@ def release_llm(request_id: str) -> bool:
             console_logger.error(f"Wrapper with address {request['address']} is not in the 'prompting' state.")
             return False
         llm_registry_db_controller.change_llm_wrapper_status_by_id(wrapper["id"], "not_ready")
-        llm_registry_db_controller.update_measurement_status(request["measurementId"], "deployments_pending")
+        queued_request = llm_registry_db_controller.get_next_undeployed_request(request["measurementId"])
+                       
+                        
+        if not queued_request or queued_request is None:
+            llm_registry_db_controller.update_measurement_status(request["measurementId"],"finished")
+        else:
+            llm_registry_db_controller.update_measurement_status(request["measurementId"], "deployments_pending")
         return True
     except Exception as e:
         console_logger.error(f"Error releasing LLM: {e}")
@@ -246,7 +248,7 @@ def get_request(request_id: str) -> Dict:
     request_status_dict = llm_registry_db_controller.get_request(request_id)
     if request_status_dict is None:
         return None
-    llm_config = request_status_dict["config"]
+    llm_config = request_status_dict["llm_config"]
     #ll_config is a json string, convert it to a dict
     llm_config = LLMConfig.model_validate_json(llm_config)
     status = request_status_dict["status"]
@@ -262,12 +264,20 @@ def shutdown():
         running = False
         console_logger.info("Stopping queue processing thread...")
         queue_thread.join(timeout=10)  # Maximal 10 Sekunden warten
+        #shutdown each wrapper
+        
         if queue_thread.is_alive():
             console_logger.error("Queue processing thread did not stop in time.")
         else:
             console_logger.info("Queue processing thread has been stopped.")
     else:
         console_logger.warning("Queue processing thread is not running.")
+        
+    llm_registry_db_controller = LLMRegistryDbController.get_instance()
+    wrappers = llm_registry_db_controller.get_all_wrappers()
+    for wrapper in wrappers:
+        lms.shutdown_wrapper(wrapper["address"], wrapper["username"], wrapper["password"])
+    
 
 
 
@@ -284,3 +294,13 @@ def start():
         queue_thread = threading.Thread(target=process_queue, daemon=True)
         queue_thread.start()
         console_logger.info("Queue processing thread has been started.")
+        
+def add_machine(address: str, password: str, user: str):
+    llm_registry_db_controller = LLMRegistryDbController.get_instance()
+    llm_registry_db_controller.add_llm_wrapper("wrapper", "none", address, user, password, "not_installed")
+
+
+def clear_all():
+    llm_registry_db_controller = LLMRegistryDbController.get_instance()
+    llm_registry_db_controller.clear_all()
+    console_logger.info("Cleared all data from the database.")

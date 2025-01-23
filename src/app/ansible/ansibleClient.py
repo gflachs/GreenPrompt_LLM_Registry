@@ -1,41 +1,35 @@
 import ansible_runner
+import app.clients.wrapper_client as wrapper_client
+from app.utils.logger import console_logger
 
-def execute_ansible_playbook(playbook_path, inventory_path, extra_vars=None):
-    """
-    Führt ein Ansible-Playbook mit ansible-runner aus.
-    :param playbook_path: Pfad zum Ansible-Playbook
-    :param inventory_path: Pfad zur Inventory-Datei
-    :param extra_vars: Dictionary mit zusätzlichen Variablen
-    :return: Ergebnis des Playbook-Laufs
-    """
+def execute_ansible_playbook_with_config(host: str, user: str, password: str) -> bool:
+    
+    playbook_path = "./app/ansible/install_wrapper.ansible.yml"
     try:
-        # Ansible-Runner starten
+        #check if the host has ansible installed
+        if not wrapper_client.check_if_ansible_is_installed(host, password, user):
+            #install ansible
+            if not wrapper_client.install_ansible(host, password, user):
+                console_logger.error("Ansible konnte nicht installiert werden")
+                return
+        
         result = ansible_runner.run(
-            private_data_dir=".",  # Arbeitsverzeichnis
+            private_data_dir=".",
             playbook=playbook_path,
-            inventory=inventory_path,
-            extravars=extra_vars,
+            inventory=None,  # Inventory wird nicht benötigt, wir übergeben direkt
+            extravars={
+                "ansible_user": user,
+                "ansible_password": password
+            },
+            cmdline=f"-i {host},"
         )
 
-        # Ergebnisse auswerten
         if result.status == "successful":
-            print(f"Playbook executed successfully: {result.status}")
-            return {
-                "status": "success",
-                "rc": result.rc,
-                "stdout": result.stdout.read(),
-            }
+            console_logger.info(f"Playbook erfolgreich ausgeführt auf {host}")
+            return True
         else:
-            print(f"Playbook execution failed: {result.status}")
-            return {
-                "status": "failure",
-                "rc": result.rc,
-                "stdout": result.stdout.read(),
-                "stderr": result.stderr.read() if result.stderr else "",
-            }
-
+            console_logger.error(f"Fehler beim Ausführen: {result.stdout.read()}")
+            return False
     except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        console_logger.error(f"Fehler beim Ausführen: {e}")
+        return False

@@ -80,7 +80,6 @@ def test_request_llm(mock_environment):
         )
     
     request_json_llms_0 = request_payload.llms[0].model_dump_json()
-    print(request_json_llms_0)
     request_json_llms_1 = request_payload.llms[1].model_dump_json()
     # Assertions for add_request calls
     expected_calls = [

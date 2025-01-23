@@ -14,7 +14,7 @@ def test_app_lifespan_in_one_go():
          patch("app.main.llm_registry_service.shutdown") as mock_registry_shutdown:
 
         # Jetzt erst importieren wir 'app', damit die oben gesetzten Patches greifen
-        from app.main import app
+        from main import app
 
         # 1) Erstellen des TestClients => Startup wird getriggert
         with TestClient(app) as client:

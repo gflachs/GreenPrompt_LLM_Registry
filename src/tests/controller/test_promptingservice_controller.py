@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
-from app.main import app  # Deine FastAPI-Anwendung
+from main import app  # Deine FastAPI-Anwendung
 from app.models.request import RequestPayload, RequestResponse, RequestStatus, LLMConfig, Args, RequestSingleResponse
 
 client = TestClient(app)  # Test-Client erstellen

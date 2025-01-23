@@ -7,7 +7,7 @@
     branch: "main"
     service_name: "llm-wrapper"
     app_directory: "/opt/llm-wrapper"
-    service_port: 8080
+    service_port: 8000
     python_exec: "/usr/bin/python3"
     main_script: "main.py"
 
