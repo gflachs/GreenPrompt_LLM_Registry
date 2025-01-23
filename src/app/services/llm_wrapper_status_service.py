@@ -3,7 +3,6 @@ This service is responsible for checkinf the status of the LLM Wrapper
 '''
 from typing import Dict
 import app.clients.wrapper_client as wrapper_client
-import app.ansible.ansibleClient as ansibleClient
 from app.utils.logger import console_logger
 from app.controller.db_controller import LLMRegistryDbController
 import threading
