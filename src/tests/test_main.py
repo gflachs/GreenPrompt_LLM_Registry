@@ -8,19 +8,21 @@ def test_app_lifespan_in_one_go():
     Prüft Startup und Shutdown in *einem* Test, inklusive Aufrufen 
     von start_check_status/stop_check_status und start/shutdown.
     """
-    with patch("app.main.llm_wrapper_status_service.start_check_status") as mock_start_check, \
-         patch("app.main.llm_wrapper_status_service.stop_check_status") as mock_stop_check, \
-         patch("app.main.llm_registry_service.start") as mock_registry_start, \
-         patch("app.main.llm_registry_service.shutdown") as mock_registry_shutdown:
+    with patch("main.llm_wrapper_status_service.start_check_status") as mock_start_check, \
+         patch("main.llm_wrapper_status_service.stop_check_status") as mock_stop_check, \
+         patch("main.llm_registry_service.start") as mock_registry_start, \
+         patch("main.llm_registry_service.shutdown") as mock_registry_shutdown, \
+         patch("main.llm_registry_service.add_machine") as mock_add_machine:
 
         # Jetzt erst importieren wir 'app', damit die oben gesetzten Patches greifen
-        from app.main import app
+        from main import app
 
         # 1) Erstellen des TestClients => Startup wird getriggert
         with TestClient(app) as client:
             # Direkt nach dem Erstellen sollte Startup bereits passiert sein:
             mock_start_check.assert_called_once()
             mock_registry_start.assert_called_once()
+            mock_add_machine.assert_called_once()
 
             # 2) Testen wir einen normalen Request
             resp = client.get("/")

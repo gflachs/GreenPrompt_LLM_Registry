@@ -1,28 +1,31 @@
 import configparser
+import sys
 from typing import List, Tuple, Any
 import os
 import json
 import logging
 
+
 class ConfigReader:
     _instance = None
     
     @staticmethod
-    def get_instance():
+    def get_instance(stage: str = None):
         if ConfigReader._instance is None:
-            ConfigReader._instance = ConfigReader()
+            ConfigReader._instance = ConfigReader(stage)
         return ConfigReader._instance
 
-    def __new__(cls):
+    def __new__(cls, stage: str = None):
         if cls._instance is None:
             cls._instance = super(ConfigReader, cls).__new__(cls)
-            cls._instance._initialize()
+            cls._instance.__initialize__(stage if stage else 'local-dev')
         return cls._instance
 
-    def _initialize(self, env='local-dev'):
+    def __initialize__(self, env='local-dev'):
         """Initialize the config reader with a default configuration file."""
         self.config = configparser.ConfigParser()
-        config_file = f'config.{env}.ini'
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # Eins nach oben navigieren
+        config_file = os.path.join(base_dir, 'configs', f'config.{env}.ini')
         if not os.path.exists(config_file):
             logging.error(f"Configuration file '{config_file}' not found.")
             raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
@@ -41,6 +44,7 @@ class ConfigReader:
         value = self.config.get(section, option)
         if section == "llm" and option == "llm_wrapper_machines":
             self.validate_llm_wrapper_config(value)
+            value = json.loads(value)
         return value
     
     def validate_llm_wrapper_config(self, value: str):

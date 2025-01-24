@@ -16,13 +16,15 @@ def deploy_llm(llm_address: str, llm_config: Dict):
     :return: Response from the LLM Wrapper
     '''
     try:
-        llm_config_json = json.dumps(llm_config)
-        response = requests.post(f"http://{llm_address}/deploy", json=llm_config_json)
+        console_logger.info(f"Deploying LLM to {llm_address}")
+        console_logger.info(f"LLM config: {llm_config}")
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f"http://{llm_address}:8000/deploy", data=llm_config, headers=headers, timeout=300)
         if response.status_code == 200:
-            console_logger.info(f"LLM deployed successfully: {response.json()}")
-            return response.json()["status"]
+            console_logger.info(f"LLM deployed successfully: {response.content}")
+            return response.json()["status"]    
         else:
-            console_logger.error(f"Failed to deploy LLM: {response.json()}")
+            console_logger.error(f"Failed to deploy LLM: {response.content}")
             return "failure"
 
     except Exception as e:
@@ -36,7 +38,10 @@ def stop_llm(llm_address: str):
     :return: Response from the LLM Wrapper
     '''
     try:
-        response = requests.post(f"http://{llm_address}/stop")
+        #with a timeout of 5 minutes
+        
+        console_logger.info(f"Stopping LLM at {llm_address}")
+        response = requests.post(f"http://{llm_address}:8000/shutdown", timeout=300)
         if response.status_code == 200:
             console_logger.info(f"LLM stopped successfully: {response.json()}")
             return response.json()["status"]
@@ -55,12 +60,12 @@ def check_status(llm_address: str):
     :return: Response from the LLM Wrapper
     '''
     try:
-        response = requests.get(f"http://{llm_address}/status")
+        response = requests.get(f"http://{llm_address}:8000/get_status")
         if response.status_code == 200:
-            console_logger.info(f"LLM status: {response.json()}")
-            return response.json()["status"]
+            console_logger.info(f"LLM status: {response.content}")
+            return response.json()["message"]
         else:
-            console_logger.error(f"Failed to get LLM status: {response.json()}")
+            console_logger.error(f"Failed to get LLM status: {response.content}")
             return "failure"
 
     except Exception as e:
@@ -170,3 +175,108 @@ def restart_llm_wrapper(wrapper_ip: str, wrapper_password: str, wrapper_username
         return False
     finally:
         ssh_client.close()
+
+def execute_ssh_command(wrapper_ip: str, username: str, password: str, command: str):
+    """
+    Führt einen SSH-Befehl auf einer Zielmaschine aus.
+    :param wrapper_ip: IP-Adresse oder Hostname der Zielmaschine
+    :param username: SSH-Benutzername
+    :param password: SSH-Passwort
+    :param command: Der auszuführende Befehl
+    :return: Tuple (stdout, stderr, exit_status)
+    """
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh_client.connect(hostname=wrapper_ip, username=username, password=password, timeout=10)
+        stdin, stdout, stderr = ssh_client.exec_command(command)
+
+        out = stdout.read().decode("utf-8").strip()
+        err = stderr.read().decode("utf-8").strip()
+        exit_status = stdout.channel.recv_exit_status()  # Exit-Code abrufen
+
+        return out, err, exit_status
+    except Exception as e:
+        return None, str(e), -1
+    finally:
+        ssh_client.close()
+
+        
+def deploy_fastapi_service(wrapper_ip: str, username: str, password: str):
+    """
+    Bereitstellung des FastAPI-Service für den LLM Wrapper auf einer Zielmaschine via SSH.
+    :param wrapper_ip: IP-Adresse oder Hostname der Zielmaschine
+    :param username: SSH-Benutzername
+    :param password: SSH-Passwort
+    """
+    repo_url = "https://github.com/gflachs/GreenPrompt_LLM_Wrapper.git"
+    branch = "main"
+    service_name = "llm-wrapper"
+    app_directory = "/opt/llm-wrapper"
+    service_port = 8000
+    python_exec = "/usr/bin/python3"
+
+    tasks = [
+        {
+            "name": "Install necessary packages",
+            "command": "sudo apt-get update && sudo apt-get install -y python3 python3-pip git ufw"
+        },
+        {
+            "name": "Ensure application directory exists",
+            "command": f"sudo mkdir -p {app_directory} && sudo chown {username}:{username} {app_directory}"
+        },
+        {
+            "name": "Clone or update the Python application from GitHub",
+            "command": f"""
+            if [ -d "{app_directory}/.git" ]; then
+                cd {app_directory} && sudo git reset --hard && sudo git pull
+            else
+                sudo rm -rf {app_directory} && sudo git clone -b {branch} {repo_url} {app_directory}
+            fi
+            """
+        },
+        {
+            "name": "Install Python dependencies",
+            "command": f"cd {app_directory} && sudo {python_exec} -m pip install -r requirements.txt"
+        },
+        {
+            "name": "Open port using UFW",
+            "command": f"sudo ufw allow {service_port}/tcp"
+        },
+        {
+            "name": "Create systemd service file",
+            "command": f"""echo '[Unit]
+            Description=FastAPI Service for LLM Wrapper
+            After=network.target
+
+            [Service]
+            ExecStart={python_exec} -m uvicorn src.app.main:app --host 0.0.0.0 --port {service_port}
+            WorkingDirectory={app_directory}
+            Restart=always
+            Environment=PYTHONUNBUFFERED=1
+            Environment=PYTHONPATH={app_directory}
+
+            [Install]
+            WantedBy=multi-user.target' | sudo tee /etc/systemd/system/{service_name}.service"""
+        },
+        {
+            "name": "Reload systemd",
+            "command": "sudo systemctl daemon-reload"
+        },
+        {
+            "name": "Enable and start FastAPI service",
+            "command": f"sudo systemctl enable {service_name} && sudo systemctl start {service_name}"
+        }
+    ]
+
+    for task in tasks:
+        console_logger.info(f"Executing task: {task['name']} on {wrapper_ip}")
+        out, err, exit_status = execute_ssh_command(wrapper_ip, username, password, task['command'])
+        
+        if exit_status != 0:  # Überprüfe den Exit-Code
+            console_logger.info(f"Task '{task['name']}' failed: {err}")
+            return False
+        else:
+            console_logger.info(f"Task '{task['name']}' succeeded: {out}")
+    
+    return True

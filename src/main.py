@@ -17,6 +17,8 @@ async def lifespan(app: FastAPI):
     llm_wrapper_machines = configreader.get("llm", "llm_wrapper_machines")
 
     #@TODO: write them to the db
+    for machine in llm_wrapper_machines:
+        llm_registry_service.add_machine(machine["ip_address"], machine["password"], machine["user"])
     
     #start the check status thread
     llm_wrapper_status_service.start_check_status()
@@ -32,15 +34,11 @@ async def lifespan(app: FastAPI):
     #stop the registry service queue
     llm_registry_service.shutdown()
     
-    #@TODO: stop all llm_wrapper_machines
-    #llm_wrapper_service.shutdown_wrapper()
-    
 
 
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(promptingservice_controller, prefix="/promptingservice", tags=["SomeController"])
-
 
 
 @app.get("/")

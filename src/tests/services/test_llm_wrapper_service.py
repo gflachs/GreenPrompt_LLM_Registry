@@ -5,7 +5,7 @@ from app.services.llm_wrapper_service import deploy_llm, stop_llm
 
 @patch("app.services.llm_wrapper_service.wrapper_client")
 def test_deploy_llm(mock_wrapper_client):
-    mock_wrapper_client.deploy_llm.return_value = "ready"
+    mock_wrapper_client.deploy_llm.return_value = "success"
     llm_address = "http://localhost:5000"
     llm_config_json = {
         "model": "test_model",
@@ -18,7 +18,7 @@ def test_deploy_llm(mock_wrapper_client):
     
 @patch("app.services.llm_wrapper_service.wrapper_client")
 def test_stop_llm(mock_wrapper_client):
-    mock_wrapper_client.stop_llm.return_value = "stopped"
+    mock_wrapper_client.stop_llm.return_value = "success"
     llm_address = "http://localhost:5000"
     assert stop_llm(llm_address) == True
 

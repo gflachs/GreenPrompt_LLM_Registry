@@ -71,13 +71,13 @@ def test_table_creation(mock_db_controller, mock_config_reader):
     
 def test_insert_wrapper(mock_db_controller, mock_config_reader):
         
-        mock_config_reader.get.return_value = "sqlite:///:memory:"
+    mock_config_reader.get.return_value = "sqlite:///:memory:"
+
+    db_controller = LLMRegistryDbController.get_instance()
     
-        db_controller = LLMRegistryDbController.get_instance()
-        
-        db_controller.add_llm_wrapper("llm", "config", "address", "root", "password", "status")
-        
-        mock_db_controller.insert_data.assert_called_once_with("llm_wrapper", [("llm", "config", "address", "root", "password", "status")])
+    db_controller.add_llm_wrapper("llm", "config", "address", "root", "password", "status")
+    
+    mock_db_controller.insert_data.assert_called_once_with("llm_wrapper", [("llm", "config", "address", "root", "password", "status")], ["llm", "llm_config", "address", "username", "password", "status"])
         
 def test_get_llm_wrappers(mock_db_controller, mock_config_reader):
         
@@ -267,7 +267,7 @@ def test_add_request(mock_db_controller, mock_config_reader):
     
     db_controller.add_request("id", "config", 1)
     
-    mock_db_controller.insert_data.assert_called_once_with("llm_request", [("id", "config", None, 1, None)])
+    mock_db_controller.insert_data.assert_called_once_with("llm_request", [("id", "config", "queued", 1, None)])
     
 def test_get_request(mock_db_controller, mock_config_reader):
             
@@ -479,8 +479,8 @@ def test_find_best_deployments(mock_db_controller, mock_config_reader):
         ON llm_request.measurementId = measurements.id
         WHERE llm_request.measurementId = measurements.id
         AND measurements.wrapper_id IS NULL
-        AND llm_wrapper.status = "ready"
-        AND llm_request.status = "queued"
+        AND llm_wrapper.status = 'ready'
+        AND llm_request.status = 'queued'
         AND llm_request.llm_config = llm_wrapper.llm_config
         """
     

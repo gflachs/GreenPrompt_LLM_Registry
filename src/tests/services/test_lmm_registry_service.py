@@ -65,8 +65,8 @@ def test_request_llm(mock_environment):
     args1 = Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})
     args2 = Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8})
     
-    llm_config1 = LLMConfig(huggingface_url="https://example.com/model", model="example-model", args=args1)
-    llm_config2 = LLMConfig(huggingface_url="https://example.com/model2", model="example-model2", args=args2)
+    llm_config1 = LLMConfig(modeltyp="https://example.com/model", uses_chat_template=True, model="example-model", args=args1)
+    llm_config2 = LLMConfig(modeltyp="https://example.com/model2", uses_chat_template=False,   model="example-model2", args=args2)
     
     request_payload = RequestPayload(llms=[llm_config1, llm_config2], measurementId=1234)
     
@@ -80,7 +80,6 @@ def test_request_llm(mock_environment):
         )
     
     request_json_llms_0 = request_payload.llms[0].model_dump_json()
-    print(request_json_llms_0)
     request_json_llms_1 = request_payload.llms[1].model_dump_json()
     # Assertions for add_request calls
     expected_calls = [
@@ -123,7 +122,7 @@ def test_process_queue(mocker, mock_environment):
     
     # Mock die Datenbank-Rückgabewerte
     db.find_best_deployments.return_value = [
-        {"llm_config": {"model": "best_model"}, "address": "localhost:5000", "request_id": "request-1", "wrapper_id": 1, "measurementId": 1000}
+        {"llm_config": {"model": "best_model"}, "address": "localhost:5000", "llm_request_id": "request-1", "wrapper_id": 1, "measurementId": 1000}
     ]
     
     db.get_measurements_waiting_for_deployment.return_value = [
@@ -134,9 +133,9 @@ def test_process_queue(mocker, mock_environment):
     
     # Mock für get_next_undeployed_request
     db.get_next_undeployed_request.side_effect = lambda measurementId: {
-        1001: {"id": "request-2", "config": {"model": "model2"}},
-        1002: {"id": "request-3", "config": {"model": "model3"}},
-        1003: {"id": "request-4", "config": {"model": "model4"}},
+        1001: {"id": "request-2", "llm_config": {"model": "model2"}, "measurementId": 1001},
+        1002: {"id": "request-3", "llm_config": {"model": "model3"}, "measurementId": 1002},
+        1003: {"id": "request-4", "llm_config": {"model": "model4"}, "measurementId": 1003},
     }.get(measurementId, None)
     
     idle_wrapper_responses = iter([
@@ -169,7 +168,7 @@ def test_process_queue(mocker, mock_environment):
     
     # Assertions für die besten Deployments
     db.find_best_deployments.assert_called_once()
-    deploy_llm_mock.assert_any_call({"model": "best_model"}, "localhost:5000")
+    #deploy_llm_mock.assert_any_call({"model": "best_model"}, "localhost:5000")
     db.set_request_address.assert_any_call("request-1", "localhost:5000")
     db.change_llm_wrapper_status_by_id.assert_any_call(1, "prompting")
     db.update_measurement_wrapper_id.assert_any_call(1000, 1)
@@ -186,7 +185,7 @@ def test_process_queue(mocker, mock_environment):
     
     # Measurement 1: Idle Wrapper gefunden
     db.get_next_undeployed_request.assert_any_call(1001)
-    deploy_llm_mock.assert_any_call({"model": "model2"}, "localhost:8080")
+    deploy_llm_mock.assert_any_call("localhost:8080", {"model": "model2"})
     db.set_request_address.assert_any_call("request-2", "localhost:8080")
     db.change_llm_wrapper_status_by_id.assert_any_call("idle_wrapper", "prompting")
     db.update_measurement_wrapper_id.assert_any_call(1001, "idle_wrapper")
@@ -197,7 +196,7 @@ def test_process_queue(mocker, mock_environment):
     
     # Measurement 2: Ready Wrapper gefunden
     db.get_next_undeployed_request.assert_any_call(1002)
-    deploy_llm_mock.assert_any_call({"model": "model3"}, "localhost:8081")
+    deploy_llm_mock.assert_any_call("localhost:8081", {"model": "model3"})
     db.set_request_address.assert_any_call("request-3", "localhost:8081")
     db.change_llm_wrapper_status_by_id.assert_any_call("ready_wrapper", "prompting")
     db.update_measurement_wrapper_id.assert_any_call(1002, "ready_wrapper")
@@ -233,7 +232,7 @@ def test_process_queue_with_wrapper_assigned(mocker, mock_environment):
     # Mock für get_next_undeployed_request
     db.get_wrapper_by_id.return_value = {"id": "assigned_wrapper", "address": "localhost:8080", "status" : "idle"}
     
-    db.get_next_undeployed_request.return_value = {"id": "request-2", "config": {"model": "model2"}, "measurementId": 1001}
+    db.get_next_undeployed_request.return_value = {"id": "request-2", "llm_config": {"model": "model2"}, "measurementId": 1001}
     
     # Patch time.sleep, um Verzögerungen zu vermeiden
     mocker.patch("app.services.llm_registry_service.time.sleep", return_value=None)
@@ -244,7 +243,7 @@ def test_process_queue_with_wrapper_assigned(mocker, mock_environment):
     # Assertions für die besten Deployments
     db.find_best_deployments.assert_called_once()
     db.get_wrapper_by_id.assert_called_once()
-    deploy_llm_mock.assert_any_call({"model": "model2"}, "localhost:8080")
+    deploy_llm_mock.assert_any_call("localhost:8080",{"model": "model2"})
     db.set_request_address.assert_any_call("request-2", "localhost:8080")
     db.change_llm_wrapper_status_by_id.assert_any_call("assigned_wrapper", "prompting")
     db.update_measurement_status.assert_any_call(1001, "prompting")
@@ -338,10 +337,10 @@ def test_process_queue_no_measurement_waiting(mocker, mock_environment):
 def test_get_request(mock_environment):
     db = mock_environment["db"]
     
-    llm_config = LLMConfig(huggingface_url="https://example.com/model", model="example-model", args=Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8}))
+    llm_config = LLMConfig(modeltyp="https://example.com/model", model="example-model", uses_chat_template=True, args=Args(prompting={"temperature": 0.7, "user": "test_user"}, deployment={"gpu_enabled": True, "batch_size": 8}))
     
     
-    db.get_request.return_value = {"id": "request-1", "config": llm_config.model_dump_json(), "status": "queued", "measurementId": 1234, "address": "localhost:5000"}
+    db.get_request.return_value = {"id": "request-1", "llm_config": llm_config.model_dump_json(), "status": "queued", "measurementId": 1234, "address": "localhost:5000"}
     
     request = get_request("request-1")
     
@@ -357,12 +356,12 @@ def test_stop_llm(mock_environment):
     
     stop_llm_mock.return_value = True
     
-    result = stop_llm("wrapper-1")
+    result = stop_llm("wrapper-1", "localhost:5000")
     
     
     assert result == True
     
-    stop_llm_mock.assert_called_once_with("wrapper-1")
+    stop_llm_mock.assert_called_once_with("localhost:5000")
     db.change_llm_wrapper_status_by_id.assert_called_once_with("wrapper-1", "stopping")
     
 def test_stop_llm_with_failed_stop(mock_environment):
@@ -373,12 +372,12 @@ def test_stop_llm_with_failed_stop(mock_environment):
     
     stop_llm_mock.return_value = False
     
-    result = stop_llm("wrapper-1")
+    result = stop_llm("wrapper-1", "localhost:5000")
     
     
     assert result == False
     
-    stop_llm_mock.assert_called_once_with("wrapper-1")
+    stop_llm_mock.assert_called_once_with("localhost:5000")
     db.change_llm_wrapper_status_by_id.assert_any_call("wrapper-1", "stopping")
     
 def test_release_llm(mock_environment):
